@@ -1,0 +1,5 @@
+{
+    "port": "COM18",
+    "board": "arduino:avr:uno",
+    "sketch": "TA_Yaqin_UNO.ino"
+}

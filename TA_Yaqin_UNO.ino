@@ -9,9 +9,9 @@
 #define LED_ON                LOW
 #define LED_OFF               HIGH
 
-#define LED_MERAH             10
-#define LED_KUNING            9
-#define LED_HIJAU             8
+#define LED_MERAH             4
+#define LED_KUNING            3
+#define LED_HIJAU             2
 
 #define JARAK_MERAH           50  // cm
 #define JARAK_KUNING          70  // cm
@@ -19,16 +19,16 @@
 
 #define PING_DISTANCE_MAX     450 // Maximum distance (in cm) to ping.
 #define PING_ITERATION        5
-#define PING_DEPAN_TRIGGER    3   // 
-#define PING_DEPAN_ECHO       2   //
-#define PING_BELAKANG_TRIGGER 4   //
-#define PING_BELAKANG_ECHO    5   //
+#define PING_DEPAN_TRIGGER    8   // 
+#define PING_DEPAN_ECHO       7   //
+#define PING_BELAKANG_TRIGGER 9   //
+#define PING_BELAKANG_ECHO    10   //
 
 NewPing ping_depan(PING_DEPAN_TRIGGER, PING_DEPAN_ECHO, PING_DISTANCE_MAX);
 NewPing ping_belakang(PING_BELAKANG_TRIGGER, PING_BELAKANG_ECHO, PING_DISTANCE_MAX);
 
-#define SERIAL_ESP_RX         11
-#define SERIAL_ESP_TX         12
+#define SERIAL_ESP_RX         12
+#define SERIAL_ESP_TX         11
 
 SoftwareSerial SerialEsp(SERIAL_ESP_RX, SERIAL_ESP_TX);   // RX, TX
 
@@ -50,10 +50,10 @@ uint32_t timer_sensor;
 uint32_t timer_led;
 
 void setup(){
-  delay_ms(3000);
+  delay(3000);
 
   // put your setup code here, to run once:
-  Serial.begin(115200);
+  Serial.begin(9600);
   SerialEsp.begin(9600);
 
   // reserve 200 bytes for the inputString:
@@ -63,11 +63,14 @@ void setup(){
   pinMode(LED_MERAH, OUTPUT);
   pinMode(LED_KUNING, OUTPUT);
   pinMode(LED_HIJAU, OUTPUT);
-  
+
+  Serial.println("start");
+
   lcd.init();
   lcd.init();
   lcd.backlight();
 
+  Serial.println("mulai");
   timer_sensor = millis();
 }
 
@@ -97,6 +100,8 @@ void loop() {
 
   if((millis() - timer_led) > 500){
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+
+    timer_led = millis();
   }
 }
 
@@ -117,18 +122,18 @@ void bacaSensor(){
   echo = ping_belakang.ping_median(PING_ITERATION);
   data.jarak_belakang_cm = ping_belakang.convert_cm(echo);
 
-  if( (data.jarak_depan < JARAK_MERAH) || (data.jarak_belakang < JARAK_MERAH)){
-    status = "";
-    status = "STOP";
+  if( (data.jarak_depan_cm< JARAK_MERAH) || (data.jarak_belakang_cm< JARAK_MERAH)){
+    data.status = "";
+    data.status = "STOP";
 
     digitalWrite(LED_MERAH, LED_ON);      data.led_merah = true;
 
     digitalWrite(LED_KUNING, LED_OFF);    data.led_kuning = false;
     digitalWrite(LED_HIJAU, LED_OFF);     data.led_hijau = false;
   }
-  else if(  (data.jarak_depan < JARAK_KUNING) || (data.jarak_belakang < JARAK_KUNING)){
-    status = "";
-    status = "WARNING";
+  else if(  (data.jarak_depan_cm< JARAK_KUNING) || (data.jarak_belakang_cm< JARAK_KUNING)){
+    data.status = "";
+    data.status = "WARNING";
 
     digitalWrite(LED_KUNING, LED_ON);     data.led_kuning = true;
 
@@ -136,8 +141,8 @@ void bacaSensor(){
     digitalWrite(LED_HIJAU, LED_OFF);     data.led_hijau = false;
   }
   else{
-    status = "";
-    status = "AMAN";
+    data.status = "";
+    data.status = "AMAN";
 
     digitalWrite(LED_HIJAU, LED_ON);      data.led_hijau = true;
     
@@ -146,13 +151,18 @@ void bacaSensor(){
   }
 
   lcd.setCursor(0,0);     lcd.print("        ");
-  lcd.setCursor(0,0);     lcd.printf("%d cm", data.jarak_depan);
+  lcd.setCursor(0,0);     lcd.print(data.jarak_depan_cm);
+  lcd.setCursor(5,0);     lcd.print("cm");
   
   lcd.setCursor(8,0);     lcd.print("        ");
-  lcd.setCursor(8,0);     lcd.printf("%d cm", data.jarak_belakang);
+  lcd.setCursor(8,0);     lcd.print(data.jarak_belakang_cm);
+  lcd.setCursor(13,0);     lcd.print("cm");
 
   lcd.setCursor(0,1);     lcd.print("               ");
-  lcd.setCursor(0,1);     lcd.print("%s", data.status);
+  lcd.setCursor(0,1);     lcd.print(data.status);
 
-  Serial.printf("D: %04d cm, B: %04d cm, status: %s\r\n", data.jarak_depan, data.jarak_belakang, data.status);
+  char buffer[200];
+  sprintf(buffer, "D: %04d cm, B: %04d cm, status: ", data.jarak_depan_cm, data.jarak_belakang_cm);
+  Serial.print(buffer);
+  Serial.println(data.status);
 }
