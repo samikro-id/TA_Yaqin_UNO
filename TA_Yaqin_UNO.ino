@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-#define BACA_SENSOR_INTERVAL  1000
+#define BACA_SENSOR_INTERVAL  2000
 
 #define LED_ON                LOW
 #define LED_OFF               HIGH
@@ -35,8 +35,8 @@ SoftwareSerial SerialEsp(SERIAL_ESP_RX, SERIAL_ESP_TX);   // RX, TX
 LiquidCrystal_I2C lcd(0x27, 16, 2); // Address, Coloumn, Row
 
 typedef struct{
-  uint32_t jarak_depan_cm;
-  uint32_t jarak_belakang_cm;
+  uint16_t jarak_depan_cm;
+  uint16_t jarak_belakang_cm;
   String status;
   bool led_merah;
   bool led_kuning;
@@ -57,7 +57,7 @@ void setup(){
   SerialEsp.begin(9600);
 
   // reserve 200 bytes for the inputString:
-  inputString.reserve(200);
+  inputString.reserve(50);
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(LED_MERAH, OUTPUT);
@@ -80,15 +80,22 @@ void loop() {
     // get the new byte:
     char inChar = (char)SerialEsp.read();
     // add it to the inputString:
-    inputString += inChar;
+    
     // if the incoming character is a newline, set a flag so the main loop can
     // do something about it:
-    if (inChar == '\n') {
+    if (inChar == '\r'){
+    }
+    else if (inChar == '\n') {
+      Serial.println(inputString);
+      
       if(inputString == "DATA"){
         sendData();
       }
 
       inputString = "";
+    }
+    else{
+      inputString += inChar;
     }
   }
 
@@ -106,8 +113,13 @@ void loop() {
 }
 
 void sendData(){
+  delay(100);
+  
   char buffer[100];
-  sprintf(buffer, "%04d%04d%d%d%d%S", data.jarak_depan_cm, data.jarak_belakang_cm, data.led_merah, data.led_kuning, data.led_hijau, data.status);
+  sprintf(buffer, "UNO%04d%04d%d%d%d%s", 
+            data.jarak_depan_cm, data.jarak_belakang_cm, 
+            data.led_merah, data.led_kuning, data.led_hijau, 
+            data.status.c_str());
 
   Serial.println(buffer);
   SerialEsp.println(buffer);
@@ -156,13 +168,14 @@ void bacaSensor(){
   
   lcd.setCursor(8,0);     lcd.print("        ");
   lcd.setCursor(8,0);     lcd.print(data.jarak_belakang_cm);
-  lcd.setCursor(13,0);     lcd.print("cm");
+  lcd.setCursor(13,0);    lcd.print("cm");
 
   lcd.setCursor(0,1);     lcd.print("               ");
   lcd.setCursor(0,1);     lcd.print(data.status);
 
-  char buffer[200];
+  char buffer[500];
   sprintf(buffer, "D: %04d cm, B: %04d cm, status: ", data.jarak_depan_cm, data.jarak_belakang_cm);
+//  sprintf(buffer, "D: cm, B: %04d cm, status: ", data.jarak_belakang_cm);
   Serial.print(buffer);
   Serial.println(data.status);
 }
