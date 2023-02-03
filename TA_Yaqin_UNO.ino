@@ -156,8 +156,9 @@ void sendData(){
   delay(100);
   
   char buffer[100];
-  sprintf(buffer, "UNO%04d%04d%d%d%d%s", 
+  sprintf(buffer, "UNO%04d%04d%04d%04d%d%d%d%s", 
             data.jarak_depan_cm, data.jarak_belakang_cm, 
+            data.jarak_kiri_cm, data.jarak_kanan_cm,
             data.led_merah, data.led_kuning, data.led_hijau, 
             data.status.c_str());
 
@@ -243,7 +244,6 @@ void bacaSensor(){
 
   char buffer[500];
   sprintf(buffer, "D: %04d cm, B: %04d cm, Kr: %04d cm, Kn: %04d cm, status: ", data.jarak_depan_cm, data.jarak_belakang_cm, data.jarak_kiri_cm, data.jarak_kanan_cm);
-//  sprintf(buffer, "D: cm, B: %04d cm, status: ", data.jarak_belakang_cm);
   Serial.print(buffer);
   Serial.println(data.status);
 }
