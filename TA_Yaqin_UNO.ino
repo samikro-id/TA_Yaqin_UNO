@@ -11,7 +11,7 @@
 #define JARAK_HIJAU           100 // cm
 
 #define PING_DISTANCE_MAX     600 // Maximum distance (in cm) to ping.
-#define PING_ITERATION        5
+#define PING_ITERATION        3
 #define PING_DEPAN_ECHO       2   //
 #define PING_DEPAN_TRIGGER    3   // 
 #define PING_KIRI_ECHO        4   //
@@ -90,33 +90,17 @@ void setup(){
   lcd.init();
   lcd.backlight();
 
-  Serial.println("mulai");
   timer_sensor = millis();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if(SerialEsp.available()){
-    char inChar = (char)SerialEsp.read();
-    if (inChar == '\r'){  }
-    else if (inChar == '\n') {
-      Serial.println(inputString);
-      
-      if(inputString == "DATA"){
-        sendData();
-      }
-
-      inputString = "";
-    }
-    else{
-      inputString += inChar;
-    }
-  }
+  receiveData();
 
   if((millis() - timer_sensor) > BACA_SENSOR_INTERVAL){
-    bacaSensor();
-
     timer_sensor = millis();
+    
+    bacaSensor();
   }
 
   if((millis() - timer_led) > 500){
@@ -152,6 +136,25 @@ void loop() {
   }
 }
 
+void receiveData(){
+  if(SerialEsp.available()){
+    char inChar = (char)SerialEsp.read();
+    if (inChar == '\r'){  }
+    else if (inChar == '\n') {
+      Serial.println(inputString);
+      
+      if(inputString == "DATA"){
+        sendData();
+      }
+
+      inputString = "";
+    }
+    else{
+      inputString += inChar;
+    }
+  }
+}
+
 void sendData(){
   delay(100);
   
@@ -172,11 +175,17 @@ void bacaSensor(){
   echo = ping_depan.ping_median(PING_ITERATION);
   data.jarak_depan_cm = ping_depan.convert_cm(echo);
 
+  receiveData();
+
   echo = ping_kiri.ping_median(PING_ITERATION);
   data.jarak_kiri_cm = ping_kiri.convert_cm(echo);
   
+  receiveData();
+
   echo = ping_kanan.ping_median(PING_ITERATION);
   data.jarak_kanan_cm = ping_kanan.convert_cm(echo);
+
+  receiveData();
 
   echo = ping_belakang.ping_median(PING_ITERATION);
   data.jarak_belakang_cm = ping_belakang.convert_cm(echo);
